@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bar do Bidoca — Abreu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f5f5;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.wrap{width:min(760px,96vw);text-align:center}.game{position:relative;height:360px;overflow:hidden;border:4px solid #252525;border-radius:18px;background:linear-gradient(#a9ddff 0 67%,#86b85f 67%);touch-action:manipulation}
+.sun{position:absolute;right:50px;top:35px;width:62px;height:62px;border-radius:50%;background:#ffd45c}.ground{position:absolute;left:0;right:0;bottom:48px;height:5px;background:#4e6040}
+.hud{position:absolute;top:14px;left:18px;right:18px;display:flex;justify-content:space-between;font-weight:800;color:#18241a;font-size:18px;z-index:10}
+.abreu{position:absolute;left:100px;bottom:53px;width:54px;height:92px;z-index:5}.body{position:absolute;left:9px;top:34px;width:38px;height:52px;background:#416da5;border-radius:18px 18px 10px 10px}
+.shirt{position:absolute;left:13px;top:38px;width:30px;height:48px;background:#416da5;border-radius:14px 14px 8px 8px}.neck{position:absolute;left:23px;top:28px;width:11px;height:12px;background:#d9a27f}
+.head{position:absolute;left:9px;top:0;width:36px;height:36px;border-radius:50%;background:#e7b08d;border:2px solid #51382d;z-index:3}
+.hair{position:absolute;left:3px;top:-4px;width:30px;height:12px;background:#777;border-radius:12px 12px 5px 5px;transform:rotate(-4deg)}
+.glasses{position:absolute;left:8px;top:12px;width:30px;height:9px;z-index:4}.glasses:before,.glasses:after{content:"";position:absolute;width:10px;height:8px;border:2px solid #222;border-radius:5px}.glasses:before{left:0}.glasses:after{right:0}.glasses{border-top:2px solid #222}
+.eye{position:absolute;top:15px;width:3px;height:3px;background:#111;border-radius:50%;z-index:5}.eye.l{left:16px}.eye.r{left:29px}
+.nose{position:absolute;left:25px;top:20px;width:4px;height:5px;border-radius:50%;background:#c88768;z-index:4}.mouth{position:absolute;left:20px;top:27px;width:12px;height:4px;border-bottom:2px solid #633;border-radius:0 0 8px 8px;z-index:4}
+.name{position:absolute;left:50%;transform:translateX(-50%);top:-46px;white-space:nowrap;font-weight:800;color:#fff;background:#26342b;padding:4px 9px;border-radius:9px;font-size:14px}
+.leg{position:absolute;top:78px;width:10px;height:16px;background:#253f66;border-radius:5px}.leg.l{left:15px}.leg.r{left:30px}
+.cup{position:absolute;bottom:53px;width:24px;height:42px;background:linear-gradient(90deg,#c78518,#f2bd45,#c78518);border-radius:5px 5px 4px 4px;box-shadow:0 2px 0 #805717;z-index:4}
+.cup:before{content:"";position:absolute;left:3px;right:3px;top:-6px;height:7px;background:#f8f8f8;border-radius:50%}
+.cup:after{content:"";position:absolute;right:-11px;top:10px;width:12px;height:16px;border:3px solid #c78518;border-left:0;border-radius:0 9px 9px 0}
+.msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:24px;color:#26342b;z-index:8;padding:30px;pointer-events:none}
+button{margin:10px 4px 0;padding:11px 20px;border:1px solid #aaa;border-radius:12px;background:white;font-weight:800;cursor:pointer;font-size:15px}.small{color:#666;font-size:14px;margin-top:8px}
+</style>
+</head>
+<body><div class="wrap"><div class="game" id="game"><div class="sun"></div><div class="ground"></div>
+<div class="hud"><span>🍺 BAR DO BIDOCA</span><span>Pontuação: <b id="score">0</b> · Recorde: <b id="best">0</b> · Nível: <b id="level">1</b></span></div>
+<div class="abreu"><div class="name">ABREU</div><div class="head"><div class="hair"></div><div class="glasses"></div><i class="eye l"></i><i class="eye r"></i><div class="nose"></div><div class="mouth"></div></div><div class="neck"></div><div class="shirt"></div><div class="leg l"></div><div class="leg r"></div></div>
+<div class="msg" id="msg">ESPAÇO, clique ou toque para começar</div></div>
+<button id="jump">PULAR 🍺</button><button id="restart">RECOMEÇAR</button><div class="small">Cada garrafa pulada vale 1 ponto. A partir de 10 pontos, a cada novo nível as garrafas ficam um pouquinho mais rápidas!</div></div>
+<script>
+const game=document.getElementById('game'),levelEl=document.getElementById('level'),msg=document.getElementById('msg'),scoreEl=document.getElementById('score'),bestEl=document.getElementById('best'),abreu=document.querySelector('.abreu');
+let running=false,dead=false,jumping=false,vy=0,score=0,speed=4,spawn=90,last=performance.now(),bottles=[],best=Number(localStorage.getItem('bidocaBest')||0);bestEl.textContent=best;
+function addBottle(){const c=document.createElement('div');c.className='cup';c.style.left=(game.clientWidth+20)+'px';c.dataset.counted='0';game.appendChild(c);bottles.push(c)}
+function reset(){bottles.forEach(c=>c.remove());bottles=[];running=false;dead=false;jumping=false;vy=0;score=0;speed=4;spawn=85;abreu.style.bottom='53px';scoreEl.textContent='0';levelEl.textContent='1';msg.textContent='ESPAÇO, clique ou toque para começar'}
+function act(){if(dead){reset();return}if(!running){running=true;msg.textContent=''}if(!jumping){jumping=true;vy=12}}
+function loop(t){const d=Math.min((t-last)/16.67,2);last=t;
+if(running&&!dead){const level=Math.floor(score/10)+1; levelEl.textContent=level; speed=Math.min(8.2,4+(level-1)*0.45); spawn-=d;
+if(spawn<=0){addBottle();spawn=110+Math.random()*110}
+if(jumping){vy-=.68*d;const b=parseFloat(abreu.style.bottom)||53,nb=b+vy*d;if(nb<=53){abreu.style.bottom='53px';jumping=false;vy=0}else abreu.style.bottom=nb+'px'}
+const pr=abreu.getBoundingClientRect();
+for(let i=bottles.length-1;i>=0;i--){const c=bottles[i],oldX=parseFloat(c.style.left),x=oldX-speed*d;c.style.left=x+'px';
+if(c.dataset.counted==='0' && x+24<pr.left){score++;scoreEl.textContent=score;c.dataset.counted='1'}
+if(x<-50){c.remove();bottles.splice(i,1);continue}
+const cr=c.getBoundingClientRect();
+if(pr.left<cr.right-5&&pr.right>cr.left+5&&pr.top<cr.bottom-4&&pr.bottom>cr.top+4){dead=true;if(score>best){best=score;localStorage.setItem('bidocaBest',best);bestEl.textContent=best}msg.textContent='💥 Bateu na garrafa! Pontuação: '+score+' — clique ou Espaço para jogar novamente'}
+}}requestAnimationFrame(loop)}
+document.getElementById('jump').onclick=act;game.addEventListener('pointerdown',act);document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();act()}});reset();requestAnimationFrame(loop);
+</script></body></html>
